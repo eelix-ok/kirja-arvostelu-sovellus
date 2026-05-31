@@ -8,10 +8,20 @@ app = Flask(__name__)
 app.secret_key = config.secret_key
 
 
-# ---------------- HOME ----------------
+# ---------------- HOME (READ + SEARCH) ----------------
 @app.route("/")
 def index():
-    return render_template("index.html")
+    search = request.args.get("search")
+
+    if search:
+        reviews = db.query(
+            "SELECT id, title, review, genre FROM reviews WHERE title LIKE ?",
+            ["%" + search + "%"]
+        )
+    else:
+        reviews = db.query("SELECT id, title, review, genre FROM reviews")
+
+    return render_template("index.html", reviews=reviews)
 
 
 # ---------------- NEW REVIEW PAGE ----------------
@@ -39,8 +49,10 @@ def create_user():
     password_hash = generate_password_hash(password1)
 
     try:
-        sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)"
-        db.execute(sql, [username, password_hash])
+        db.execute(
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            (username, password_hash)
+        )
     except sqlite3.IntegrityError:
         return "VIRHE: tunnus on jo varattu"
 
@@ -56,8 +68,10 @@ def login():
     username = request.form["username"]
     password = request.form["password"]
 
-    sql = "SELECT password_hash FROM users WHERE username = ?"
-    result = db.query(sql, [username])
+    result = db.query(
+        "SELECT password_hash FROM users WHERE username = ?",
+        [username]
+    )
 
     if not result:
         return "VIRHE: käyttäjää ei löydy"
@@ -79,16 +93,54 @@ def logout():
 
 
 # ---------------- CREATE REVIEW ----------------
-@app.route("/create", methods=["POST"])
+@app.route("/create_review", methods=["POST"])
 def create_review():
     title = request.form["title"]
-    description = request.form["review"]
+    review = request.form["review"]
     genre = request.form["genre"]
 
     db.execute(
         "INSERT INTO reviews (title, review, genre) VALUES (?, ?, ?)",
-        (title, description, genre)
+        (title, review, genre)
     )
 
     flash("Arvostelu julkaistu!")
+    return redirect("/")
+
+
+# ---------------- EDIT ----------------
+@app.route("/edit/<int:id>")
+def edit(id):
+    review = db.query(
+        "SELECT id, title, review, genre FROM reviews WHERE id = ?",
+        [id]
+    )
+
+    if not review:
+        return "Arvostelua ei löytynyt"
+
+    return render_template("edit.html", review=review[0])
+
+
+# ---------------- UPDATE ----------------
+@app.route("/update", methods=["POST"])
+def update():
+    db.execute("""
+        UPDATE reviews
+        SET title = ?, review = ?, genre = ?
+        WHERE id = ?
+    """, [
+        request.form["title"],
+        request.form["review"],
+        request.form["genre"],
+        request.form["id"]
+    ])
+
+    return redirect("/")
+
+
+# ---------------- DELETE ----------------
+@app.route("/delete/<int:id>")
+def delete(id):
+    db.execute("DELETE FROM reviews WHERE id = ?", [id])
     return redirect("/")

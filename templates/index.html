@@ -6,22 +6,58 @@
 </head>
 
 <body>
-    <h1>Kirja-arvostelu</h1>
+
+  <h1>Kirja-arvostelu</h1>
 
   {% if session.username %}
-  <p>
-    Olet kirjautunut nimellä {{ session.username }}
-  </p>
+    <p>
+      Olet kirjautunut nimellä <b>{{ session.username }}</b>
+    </p>
   {% endif %}
 
   <p>
-    <a href="/login">Kirjaudu sisään </a>
-    <a href="/register">Luo tunnus </a>
-    <a href="/logout">Kirjaudu ulos </a>
+    <a href="/login">Kirjaudu sisään</a> |
+    <a href="/register">Luo tunnus</a> |
+    <a href="/logout">Kirjaudu ulos</a>
   </p>
 
   <p>
     <a href="/new_review">Uusi arvostelu</a>
+  </p>
+
+  <hr>
+
+  <!-- SEARCH -->
+  <form action="/" method="get">
+    <input type="text" name="search" placeholder="Hae kirjoja...">
+    <button type="submit">Hae</button>
+  </form>
+
+  <hr>
+
+  <h2>Arvostelut</h2>
+
+  {% if reviews %}
+    {% for r in reviews %}
+      <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+
+        <h3>{{ r[1] }}</h3>
+
+        <p>{{ r[2] }}</p>
+
+        <small><b>Genre:</b> {{ r[3] }}</small>
+
+        <p>
+          <a href="/edit/{{ r[0] }}">Muokkaa</a> |
+          <a href="/delete/{{ r[0] }}" onclick="return confirm('Haluatko varmasti poistaa?')">Poista</a>
+        </p>
+
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>Ei vielä arvosteluja.</p>
+  {% endif %}
+
 </body>
 
 </html>
