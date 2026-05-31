@@ -21,24 +21,24 @@ Sovellus käyttää SQLite-tietokantaa käyttäjien ja arvostelujen tallentamise
 
 ## Asennus ja käynnistys
 
-### 1. Kloonaa projekti
+### 1. Kloonaa projekti ja siirry kansioon
 
-bash
-git clone <https://github.com/eelix-ok/kirja-arvostelu-sovellus/>
-cd kirja-arvostelu-sovellus
+
+- git clone https://github.com/eelix-ok/kirja-arvostelu-sovellus.git
+- cd kirja-arvostelu-sovellus
 
 ### 2. Aktivoi venv
 
-python -m venv venv
-source venv/Scripts/activate
+- python -m venv venv
+- source venv/Scripts/activate
 
 ### 3. Asenna flask
 
-pip install flask
+- pip install flask
 
 ### 4. Tee tietokanta
 
-python init_db.py
+- python init_db.py
 
 Tietokannan rakenne:
 
@@ -57,7 +57,7 @@ CREATE TABLE reviews (
 
 ### 5. Käynnistä sovellus
 
-flask run
+- flask run
 
-Ja siirry saamaasi osoitteeseen
+- Ja siirry saamaasi osoitteeseen
 
