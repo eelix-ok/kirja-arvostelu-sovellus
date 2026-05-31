@@ -13,6 +13,7 @@ Sovellus käyttää SQLite-tietokantaa käyttäjien ja arvostelujen tallentamise
 - Käyttäjän rekisteröityminen
 - Kirjautuminen ja uloskirjautuminen
 - Kirja-arvostelun lisääminen (otsikko, arvostelu, genre)
+- Arvostelujen lukeminen ja muokkaaminen
 - Arvostelut tallennetaan SQLite-tietokantaan
 - Viestit onnistuneista toiminnoista
 
