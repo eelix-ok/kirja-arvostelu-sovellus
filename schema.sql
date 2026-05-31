@@ -1,6 +1,5 @@
--- Users table
-CREATE TABLE Users (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	username TEXT UNIQUE NOT NULL,
-	password_hash TEXT NOT NULL
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE,
+    password_hash TEXT
 );
