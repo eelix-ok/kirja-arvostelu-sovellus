@@ -124,15 +124,13 @@ def create_review():
     review = request.form["review"].strip()
     genres = request.form.getlist("genres")
 
-    if not title or not review or not genres:
-        return "VIRHE: kaikki kentät ovat pakollisia"
+    if not title or not review:
+        return "VIRHE: title ja review pakollisia"
 
-    db.execute(
+    review_id = db.execute(
         "INSERT INTO reviews (title, review) VALUES (?, ?)",
         (title, review)
     )
-
-    review_id = db.query("SELECT last_insert_rowid()")[0][0]
 
     for g in genres:
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
