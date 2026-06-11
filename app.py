@@ -243,25 +243,19 @@ def update():
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>")
 def delete(id):
-    if "username" not in session:
-        return "Ei kirjautunut", 403
+    user_id = get_user_id()
 
-    user = db.query(
-        "SELECT id FROM users WHERE username = ?",
-        (session["username"],)
-    )
-
-    if not user:
-        return "Käyttäjää ei löydy", 403
-
-    user_id = user[0][0]
-
+    if not user_id:
+        return "Ei oikeuksia", 403
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
 
-    db.execute("""
+    deleted = db.execute("""
         DELETE FROM reviews
         WHERE id = ? AND user_id = ?
     """, (id, user_id))
+
+    if deleted == 0:
+        return "Ei oikeuksia", 403
 
     return redirect("/")
