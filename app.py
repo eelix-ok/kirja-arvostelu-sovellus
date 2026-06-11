@@ -151,16 +151,20 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
-    review = db.query(
-        "SELECT id, title, review, genre FROM reviews WHERE id = ?",
-        [id]
-    )
+    review = db.query("""
+        SELECT reviews.id, reviews.title, reviews.review,
+               GROUP_CONCAT(genres.name, ', ') AS genres
+        FROM reviews
+        LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+        LEFT JOIN genres ON genres.id = review_genres.genre_id
+        WHERE reviews.id = ?
+        GROUP BY reviews.id
+    """, [id])
 
     if not review:
         return "Arvostelua ei löytynyt"
 
     return render_template("edit.html", review=review[0])
-
 
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
