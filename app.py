@@ -7,7 +7,14 @@ import config
 app = Flask(__name__)
 app.secret_key = config.secret_key
 
+
+# ---------------- HELPERS ----------------
 def get_user_id():
+
+    if "user_id" in session:
+        return session["user_id"]
+
+
     username = session.get("username")
     if not username:
         return None
@@ -20,7 +27,10 @@ def get_user_id():
     if not user:
         return None
 
-    return user[0][0]
+    user_id = user[0][0]
+    session["user_id"] = user_id
+    return user_id
+
 
 # ---------------- HOME (READ + SEARCH) ----------------
 @app.route("/")
@@ -108,17 +118,18 @@ def login():
     password = request.form["password"]
 
     result = db.query(
-        "SELECT password_hash FROM users WHERE username = ?",
+        "SELECT id, password_hash FROM users WHERE username = ?",
         [username]
     )
 
     if not result:
         return "VIRHE: käyttäjää ei löydy"
 
-    password_hash = result[0][0]
+    user_id, password_hash = result[0]
 
     if check_password_hash(password_hash, password):
         session["username"] = username
+        session["user_id"] = user_id
         return redirect("/")
     else:
         return "VIRHE: väärä salasana"
@@ -128,13 +139,14 @@ def login():
 @app.route("/logout")
 def logout():
     session.pop("username", None)
+    session.pop("user_id", None)
     return redirect("/")
 
 
 # ---------------- CREATE REVIEW ----------------
 @app.route("/create_review", methods=["POST"])
 def create_review():
-    if "username" not in session:
+    if "user_id" not in session:
         return "Ei kirjautunut", 403
 
     title = request.form["title"].strip()
@@ -144,20 +156,7 @@ def create_review():
     if not title or not review:
         return "VIRHE: title ja review pakollisia"
 
-    username = session.get("username")
-
-    if not username:
-        return "Ei kirjautunut", 403
-
-    user = db.query(
-    "SELECT id FROM users WHERE username = ?",
-    (username,)
-    )
-
-    if len(user) == 0:
-        return "Käyttäjää ei löydy (rekisteröidy uudelleen)", 403
-
-    user_id = user[0][0]
+    user_id = session["user_id"]
 
     review_id = db.execute(
         "INSERT INTO reviews (title, review, user_id) VALUES (?, ?, ?)",
@@ -189,20 +188,31 @@ def edit(id):
         return "Ei oikeuksia", 403
 
     review = db.query("""
-        SELECT reviews.id, reviews.title, reviews.review,
-               GROUP_CONCAT(genres.name, ', ') AS genres,
-               reviews.user_id
+        SELECT id, title, review, user_id
         FROM reviews
-        LEFT JOIN review_genres ON reviews.id = review_genres.review_id
-        LEFT JOIN genres ON genres.id = review_genres.genre_id
-        WHERE reviews.id = ? AND reviews.user_id = ?
-        GROUP BY reviews.id
-    """, (id, user_id))
+        WHERE id = ?
+    """, (id,))
 
     if not review:
-        return "Ei oikeuksia tai ei löydy", 403
+        return "Ei löydy", 404
 
-    return render_template("edit.html", review=review[0])
+    review = review[0]
+
+    if review[3] != user_id:
+        return "Ei oikeuksia", 403
+
+    genres = db.query("""
+        SELECT genres.name
+        FROM genres
+        JOIN review_genres ON genres.id = review_genres.genre_id
+        WHERE review_genres.review_id = ?
+    """, (id,))
+
+    review = list(review) + [", ".join([g[0] for g in genres])]
+
+    return render_template("edit.html", review=review)
+
+
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
@@ -241,6 +251,8 @@ def update():
         """, (review_id, genre_id))
 
     return redirect("/")
+
+
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>")
 def delete(id):
@@ -249,8 +261,6 @@ def delete(id):
     if not user_id:
         return "Ei oikeuksia", 403
 
-    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
-
     deleted = db.execute("""
         DELETE FROM reviews
         WHERE id = ? AND user_id = ?
@@ -258,5 +268,7 @@ def delete(id):
 
     if deleted == 0:
         return "Ei oikeuksia", 403
+
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
 
     return redirect("/")
