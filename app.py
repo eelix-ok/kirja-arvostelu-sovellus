@@ -130,18 +130,25 @@ def create_review():
     if not title or not review:
         return "VIRHE: title ja review pakollisia"
 
+    username = session.get("username")
 
-    user_id = db.query(
-        "SELECT id FROM users WHERE username = ?",
-        (session["username"],)
-    )[0][0]
+    if not username:
+        return "Ei kirjautunut", 403
 
+    user = db.query(
+    "SELECT id FROM users WHERE username = ?",
+    (username,)
+    )
+
+    if len(user) == 0:
+        return "Käyttäjää ei löydy (rekisteröidy uudelleen)", 403
+
+    user_id = user[0][0]
 
     review_id = db.execute(
         "INSERT INTO reviews (title, review, user_id) VALUES (?, ?, ?)",
         (title, review, user_id)
     )
-
 
     for g in genres:
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
