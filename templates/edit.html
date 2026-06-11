@@ -1,42 +1,72 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title>Muokkaa arvostelua</title>
 </head>
 
 <body>
 
-  <h1>Muokkaa arvostelua</h1>
+<h1>Muokkaa arvostelua</h1>
 
-  <form action="/update" method="post">
+<form action="/update" method="post">
 
-    <!-- ID piilotettuna -->
-    <input type="hidden" name="id" value="{{ review[0] }}">
-
-    <p>
-      Kirjan nimi:<br>
-      <input type="text" name="title" value="{{ review[1] }}" required>
-    </p>
-
-    <p>
-      Arvostelu:<br>
-      <textarea name="review" rows="8" cols="60" required>{{ review[2] }}</textarea>
-    </p>
-
-    <p>
-      Genre:<br>
-      <input type="text" name="genre" value="{{ review[3] }}" required>
-    </p>
-
-    <button type="submit">Tallenna muutokset</button>
-
-  </form>
+  <!-- hidden id -->
+  <input type="hidden" name="id" value="{{ review['id'] }}">
 
   <p>
-    <a href="/">← Takaisin etusivulle</a>
+    Kirjan nimi:<br>
+    <input type="text" name="title" value="{{ review['title'] }}" required>
   </p>
 
-</body>
+  <p>
+    Arvostelu:<br>
+    <textarea name="review" rows="8" cols="60" required>{{ review['review'] }}</textarea>
+  </p>
 
+  <p>
+    <b>Genret:</b><br><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="fantasy"
+        {% if "fantasy" in review["genres"] %}checked{% endif %}>
+      Fantasy
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="scifi"
+        {% if "scifi" in review["genres"] %}checked{% endif %}>
+      Sci-fi
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="romance"
+        {% if "romance" in review["genres"] %}checked{% endif %}>
+      Romance
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="horror"
+        {% if "horror" in review["genres"] %}checked{% endif %}>
+      Horror
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="mystery"
+        {% if "mystery" in review["genres"] %}checked{% endif %}>
+      Mystery
+    </label><br>
+
+  </p>
+
+  <br>
+
+  <button type="submit">Tallenna muutokset</button>
+
+</form>
+
+<p>
+  <a href="/">← Takaisin</a>
+</p>
+
+</body>
 </html>

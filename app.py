@@ -169,20 +169,41 @@ def edit(id):
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
+    review_id = request.form["id"]
+    title = request.form["title"].strip()
+    review = request.form["review"].strip()
+    genres = request.form.getlist("genres")
+
+    if not title or not review:
+        return "VIRHE: nimi ja arvostelu pakollisia"
+
     db.execute("""
         UPDATE reviews
-        SET title = ?, review = ?, genre = ?
+        SET title = ?, review = ?
         WHERE id = ?
-    """, [
-        request.form["title"],
-        request.form["review"],
-        request.form["genre"],
-        request.form["id"]
-    ])
+    """, (title, review, review_id))
+
+
+    db.execute("""
+        DELETE FROM review_genres
+        WHERE review_id = ?
+    """, (review_id,))
+
+
+    for g in genres:
+        db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
+
+        genre_id = db.query(
+            "SELECT id FROM genres WHERE name = ?",
+            (g,)
+        )[0][0]
+
+        db.execute("""
+            INSERT INTO review_genres (review_id, genre_id)
+            VALUES (?, ?)
+        """, (review_id, genre_id))
 
     return redirect("/")
-
-
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>")
 def delete(id):
