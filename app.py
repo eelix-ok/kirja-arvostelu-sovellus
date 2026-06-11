@@ -169,11 +169,9 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
-    username = session.get("username")
-    if not username:
-        return "Ei oikeuksia"
-
-    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+    user_id = get_user_id()
+    if not user_id:
+        return "Ei oikeuksia", 403
 
     review = db.query("""
         SELECT reviews.id, reviews.title, reviews.review,
@@ -186,24 +184,21 @@ def edit(id):
     """, (id, user_id))
 
     if not review:
-        return "Ei oikeuksia tai ei löydy"
+        return "Ei oikeuksia tai ei löydy", 403
 
     return render_template("edit.html", review=review[0])
 
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
-    username = session.get("username")
-    if not username:
-        return "Ei oikeuksia"
-
-    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+    user_id = get_user_id()
+    if not user_id:
+        return "Ei oikeuksia", 403
 
     review_id = request.form["id"]
     title = request.form["title"].strip()
     review = request.form["review"].strip()
     genres = request.form.getlist("genres")
-
 
     updated = db.execute("""
         UPDATE reviews
@@ -212,11 +207,9 @@ def update():
     """, (title, review, review_id, user_id))
 
     if updated == 0:
-        return "Ei oikeuksia"
-
+        return "Ei oikeuksia", 403
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
-
 
     for g in genres:
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
@@ -235,11 +228,21 @@ def update():
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>")
 def delete(id):
-    username = session.get("username")
-    if not username:
-        return "Ei oikeuksia"
+    if "username" not in session:
+        return "Ei kirjautunut", 403
 
-    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+    user = db.query(
+        "SELECT id FROM users WHERE username = ?",
+        (session["username"],)
+    )
+
+    if not user:
+        return "Käyttäjää ei löydy", 403
+
+    user_id = user[0][0]
+
+
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
 
     db.execute("""
         DELETE FROM reviews
