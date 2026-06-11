@@ -184,19 +184,15 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
-    print("SESSION:", session.get("username"))
-    print("USER_ID:", get_user_id())
-    print("REVIEW USER_ID:", db.query(
-    "SELECT user_id FROM reviews WHERE id = ?",
-    (id,)
-))
     user_id = get_user_id()
+
     if not user_id:
         return "Ei oikeuksia", 403
 
     review = db.query("""
         SELECT reviews.id, reviews.title, reviews.review,
-               GROUP_CONCAT(genres.name, ', ') AS genres
+               GROUP_CONCAT(genres.name, ', ') AS genres,
+               reviews.user_id
         FROM reviews
         LEFT JOIN review_genres ON reviews.id = review_genres.review_id
         LEFT JOIN genres ON genres.id = review_genres.genre_id
@@ -208,24 +204,24 @@ def edit(id):
         return "Ei oikeuksia tai ei löydy", 403
 
     return render_template("edit.html", review=review[0])
-
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
     user_id = get_user_id()
+
     if not user_id:
         return "Ei oikeuksia", 403
 
     review_id = request.form["id"]
     title = request.form["title"].strip()
-    review = request.form["review"].strip()
+    review_text = request.form["review"].strip()
     genres = request.form.getlist("genres")
 
     updated = db.execute("""
         UPDATE reviews
         SET title = ?, review = ?
         WHERE id = ? AND user_id = ?
-    """, (title, review, review_id, user_id))
+    """, (title, review_text, review_id, user_id))
 
     if updated == 0:
         return "Ei oikeuksia", 403
