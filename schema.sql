@@ -20,6 +20,6 @@ CREATE TABLE genres (
 CREATE TABLE review_genres (
     review_id INTEGER,
     genre_id INTEGER,
-    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
     FOREIGN KEY (genre_id) REFERENCES genres(id)
 );
