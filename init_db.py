@@ -1,7 +1,6 @@
 import sqlite3
 
 con = sqlite3.connect("database.db")
-
 cur = con.cursor()
 
 cur.executescript("""
@@ -19,7 +18,9 @@ CREATE TABLE users (
 CREATE TABLE reviews (
     id INTEGER PRIMARY KEY,
     title TEXT,
-    review TEXT
+    review TEXT,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE genres (
@@ -29,11 +30,13 @@ CREATE TABLE genres (
 
 CREATE TABLE review_genres (
     review_id INTEGER,
-    genre_id INTEGER
+    genre_id INTEGER,
+    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (genre_id) REFERENCES genres(id)
 );
 """)
 
 con.commit()
 con.close()
 
-print("Database created!")
+print("Database reset + updated!")
