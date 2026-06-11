@@ -120,6 +120,9 @@ def logout():
 # ---------------- CREATE REVIEW ----------------
 @app.route("/create_review", methods=["POST"])
 def create_review():
+    if "username" not in session:
+        return "Ei kirjautunut", 403
+
     title = request.form["title"].strip()
     review = request.form["review"].strip()
     genres = request.form.getlist("genres")
@@ -127,10 +130,18 @@ def create_review():
     if not title or not review:
         return "VIRHE: title ja review pakollisia"
 
+
+    user_id = db.query(
+        "SELECT id FROM users WHERE username = ?",
+        (session["username"],)
+    )[0][0]
+
+
     review_id = db.execute(
-        "INSERT INTO reviews (title, review) VALUES (?, ?)",
-        (title, review)
+        "INSERT INTO reviews (title, review, user_id) VALUES (?, ?, ?)",
+        (title, review, user_id)
     )
+
 
     for g in genres:
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
@@ -151,43 +162,53 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
+    username = session.get("username")
+    if not username:
+        return "Ei oikeuksia"
+
+    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+
     review = db.query("""
         SELECT reviews.id, reviews.title, reviews.review,
                GROUP_CONCAT(genres.name, ', ') AS genres
         FROM reviews
         LEFT JOIN review_genres ON reviews.id = review_genres.review_id
         LEFT JOIN genres ON genres.id = review_genres.genre_id
-        WHERE reviews.id = ?
+        WHERE reviews.id = ? AND reviews.user_id = ?
         GROUP BY reviews.id
-    """, [id])
+    """, (id, user_id))
 
     if not review:
-        return "Arvostelua ei löytynyt"
+        return "Ei oikeuksia tai ei löydy"
 
     return render_template("edit.html", review=review[0])
 
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
+    username = session.get("username")
+    if not username:
+        return "Ei oikeuksia"
+
+    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+
     review_id = request.form["id"]
     title = request.form["title"].strip()
     review = request.form["review"].strip()
     genres = request.form.getlist("genres")
 
-    if not title or not review:
-        return "VIRHE: nimi ja arvostelu pakollisia"
 
-    db.execute("""
+    updated = db.execute("""
         UPDATE reviews
         SET title = ?, review = ?
-        WHERE id = ?
-    """, (title, review, review_id))
+        WHERE id = ? AND user_id = ?
+    """, (title, review, review_id, user_id))
+
+    if updated == 0:
+        return "Ei oikeuksia"
 
 
-    db.execute("""
-        DELETE FROM review_genres
-        WHERE review_id = ?
-    """, (review_id,))
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
 
 
     for g in genres:
@@ -207,5 +228,15 @@ def update():
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>")
 def delete(id):
-    db.execute("DELETE FROM reviews WHERE id = ?", [id])
+    username = session.get("username")
+    if not username:
+        return "Ei oikeuksia"
+
+    user_id = db.query("SELECT id FROM users WHERE username = ?", [username])[0][0]
+
+    db.execute("""
+        DELETE FROM reviews
+        WHERE id = ? AND user_id = ?
+    """, (id, user_id))
+
     return redirect("/")
