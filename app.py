@@ -22,7 +22,6 @@ def get_user_id():
 
     return user[0][0]
 
-
 # ---------------- HOME (READ + SEARCH) ----------------
 @app.route("/")
 def index():
