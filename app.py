@@ -16,22 +16,35 @@ def index():
 
     if search:
         reviews = db.query("""
-            SELECT id, title, review
+            SELECT reviews.id, reviews.title, reviews.review,
+                   GROUP_CONCAT(genres.name, ', ') AS genres
             FROM reviews
-            WHERE title LIKE ?
+            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+            LEFT JOIN genres ON genres.id = review_genres.genre_id
+            WHERE reviews.title LIKE ?
+            GROUP BY reviews.id
         """, ["%" + search + "%"])
 
     elif genre:
         reviews = db.query("""
-            SELECT reviews.id, reviews.title, reviews.review
+            SELECT reviews.id, reviews.title, reviews.review,
+                   GROUP_CONCAT(genres.name, ', ') AS genres
             FROM reviews
-            JOIN review_genres ON reviews.id = review_genres.review_id
-            JOIN genres ON genres.id = review_genres.genre_id
+            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+            LEFT JOIN genres ON genres.id = review_genres.genre_id
             WHERE genres.name = ?
+            GROUP BY reviews.id
         """, [genre])
 
     else:
-        reviews = db.query("SELECT id, title, review FROM reviews")
+        reviews = db.query("""
+            SELECT reviews.id, reviews.title, reviews.review,
+                   GROUP_CONCAT(genres.name, ', ') AS genres
+            FROM reviews
+            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+            LEFT JOIN genres ON genres.id = review_genres.genre_id
+            GROUP BY reviews.id
+        """)
 
     return render_template("index.html", reviews=reviews)
 
