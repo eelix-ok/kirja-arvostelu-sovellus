@@ -184,6 +184,12 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
+    print("SESSION:", session.get("username"))
+    print("USER_ID:", get_user_id())
+    print("REVIEW USER_ID:", db.query(
+    "SELECT user_id FROM reviews WHERE id = ?",
+    (id,)
+))
     user_id = get_user_id()
     if not user_id:
         return "Ei oikeuksia", 403
