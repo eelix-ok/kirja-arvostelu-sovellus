@@ -7,6 +7,21 @@ import config
 app = Flask(__name__)
 app.secret_key = config.secret_key
 
+def get_user_id():
+    username = session.get("username")
+    if not username:
+        return None
+
+    user = db.query(
+        "SELECT id FROM users WHERE username = ?",
+        (username,)
+    )
+
+    if not user:
+        return None
+
+    return user[0][0]
+
 
 # ---------------- HOME (READ + SEARCH) ----------------
 @app.route("/")
