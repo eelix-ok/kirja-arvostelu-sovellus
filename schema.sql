@@ -7,7 +7,9 @@ CREATE TABLE users (
 CREATE TABLE reviews (
     id INTEGER PRIMARY KEY,
     title TEXT,
-    review TEXT
+    review TEXT,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE genres (
