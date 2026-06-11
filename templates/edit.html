@@ -11,6 +11,7 @@
 
   <form action="/update" method="post">
 
+    <!-- ID piilotettuna -->
     <input type="hidden" name="id" value="{{ review[0] }}">
 
     <p>
@@ -19,8 +20,8 @@
     </p>
 
     <p>
-      Kuvaus:<br>
-      <textarea name="description" rows="8" cols="60" required>{{ review[2] }}</textarea>
+      Arvostelu:<br>
+      <textarea name="review" rows="8" cols="60" required>{{ review[2] }}</textarea>
     </p>
 
     <p>

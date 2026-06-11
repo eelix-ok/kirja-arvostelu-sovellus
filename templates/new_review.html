@@ -1,27 +1,62 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title>Uusi arvostelu</title>
 </head>
 
 <body>
-  <h1>Uusi arvostelu</h1>
-  <form action="/create_review" method="post">
-    <p>
-      Kirjan nimi: <br />
-      <input type="text" name="title" />
-    </p>
-    <p>
-      Arvostelu: <br />
-      <textarea name=review rows="9" cols="70"></textarea>
-    </p>
-    <p>
-      Kirjan genre: <br />
-      <input type="text" name="genre" />
-    </p>
-    <input type="submit" value="Julkaise arvostelu" />
-  </form>
-</body>
 
+<h1>Lisää uusi kirja-arvostelu</h1>
+
+<form action="/create_review" method="post">
+
+  <p>
+    Kirjan nimi:<br>
+    <input type="text" name="title" required>
+  </p>
+
+  <p>
+    Arvostelu:<br>
+    <textarea name="review" rows="8" cols="60" required></textarea>
+  </p>
+
+  <p>
+    Genret:<br>
+
+    <label>
+      <input type="checkbox" name="genres" value="fantasy">
+      Fantasy
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="scifi">
+      Sci-fi
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="romance">
+      Romance
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="horror">
+      Horror
+    </label><br>
+
+    <label>
+      <input type="checkbox" name="genres" value="mystery">
+      Mystery
+    </label><br>
+
+  </p>
+
+  <button type="submit">Julkaise arvostelu</button>
+
+</form>
+
+<p>
+  <a href="/">Takaisin etusivulle</a>
+</p>
+
+</body>
 </html>

@@ -1,62 +1,83 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title>Kirja-arvostelu sovellus</title>
 </head>
 
 <body>
 
-  <h1>Kirja-arvostelu</h1>
+<h1>Kirja-arvostelut</h1>
 
-  {% if session.username %}
-    <p>
-      Olet kirjautunut nimellä <b>{{ session.username }}</b>
-    </p>
-  {% endif %}
-
+{% if session.username %}
+  <p>
+    Kirjautunut: <b>{{ session.username }}</b>
+  </p>
+  <p><a href="/logout">Kirjaudu ulos</a></p>
+{% else %}
   <p>
     <a href="/login">Kirjaudu sisään</a> |
-    <a href="/register">Luo tunnus</a> |
-    <a href="/logout">Kirjaudu ulos</a>
+    <a href="/register">Luo tunnus</a>
   </p>
+{% endif %}
 
-  <p>
-    <a href="/new_review">Uusi arvostelu</a>
-  </p>
+<p>
+  <a href="/new_review">+ Lisää uusi arvostelu</a>
+</p>
 
-  <hr>
+<hr>
 
-  <form action="/" method="get">
-    <input type="text" name="search" placeholder="Hae kirjoja...">
-    <button type="submit">Hae</button>
-  </form>
+<!-- SEARCH -->
+<form method="get" action="/">
+  <input type="text" name="search" placeholder="Hae nimellä...">
+  <button type="submit">Hae</button>
+</form>
 
-  <hr>
+<!-- GENRE FILTER -->
+<form method="get" action="/">
+  <p>Suodata genren mukaan:</p>
 
-  <h2>Arvostelut</h2>
+  <select name="genre">
+    <option value="">-- kaikki --</option>
+    <option value="fantasy">Fantasy</option>
+    <option value="scifi">Sci-fi</option>
+    <option value="romance">Romance</option>
+    <option value="horror">Horror</option>
+    <option value="mystery">Mystery</option>
+  </select>
 
-  {% if reviews %}
-    {% for r in reviews %}
-      <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+  <button type="submit">Suodata</button>
+</form>
 
-        <h3>{{ r[1] }}</h3>
+<hr>
 
-        <p>{{ r[2] }}</p>
+<h2>Arvostelut</h2>
 
-        <small><b>Genre:</b> {{ r[3] }}</small>
+{% if reviews %}
 
-        <p>
-          <a href="/edit/{{ r[0] }}">Muokkaa</a> |
-          <a href="/delete/{{ r[0] }}" onclick="return confirm('Haluatko varmasti poistaa?')">Poista</a>
-        </p>
+  {% for r in reviews %}
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
 
-      </div>
-    {% endfor %}
-  {% else %}
-    <p>Ei vielä arvosteluja.</p>
-  {% endif %}
+      <h3>{{ r[1] }}</h3>
+
+      <p>{{ r[2] }}</p>
+
+      <p>
+        <b>Genret:</b> {{ r[3] }}
+      </p>
+
+      <p>
+        <a href="/edit/{{ r[0] }}">Muokkaa</a> |
+        <a href="/delete/{{ r[0] }}" onclick="return confirm('Poistetaanko?')">
+          Poista
+        </a>
+      </p>
+
+    </div>
+  {% endfor %}
+
+{% else %}
+  <p>Ei arvosteluja.</p>
+{% endif %}
 
 </body>
-
 </html>

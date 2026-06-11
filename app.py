@@ -12,14 +12,26 @@ app.secret_key = config.secret_key
 @app.route("/")
 def index():
     search = request.args.get("search")
+    genre = request.args.get("genre")
 
     if search:
-        reviews = db.query(
-            "SELECT id, title, review, genre FROM reviews WHERE title LIKE ?",
-            ["%" + search + "%"]
-        )
+        reviews = db.query("""
+            SELECT id, title, review
+            FROM reviews
+            WHERE title LIKE ?
+        """, ["%" + search + "%"])
+
+    elif genre:
+        reviews = db.query("""
+            SELECT reviews.id, reviews.title, reviews.review
+            FROM reviews
+            JOIN review_genres ON reviews.id = review_genres.review_id
+            JOIN genres ON genres.id = review_genres.genre_id
+            WHERE genres.name = ?
+        """, [genre])
+
     else:
-        reviews = db.query("SELECT id, title, review, genre FROM reviews")
+        reviews = db.query("SELECT id, title, review FROM reviews")
 
     return render_template("index.html", reviews=reviews)
 
@@ -95,16 +107,33 @@ def logout():
 # ---------------- CREATE REVIEW ----------------
 @app.route("/create_review", methods=["POST"])
 def create_review():
-    title = request.form["title"]
-    review = request.form["review"]
-    genre = request.form["genre"]
+    title = request.form["title"].strip()
+    review = request.form["review"].strip()
+    genres = request.form.getlist("genres")
+
+    if not title or not review or not genres:
+        return "VIRHE: kaikki kentät ovat pakollisia"
 
     db.execute(
-        "INSERT INTO reviews (title, review, genre) VALUES (?, ?, ?)",
-        (title, review, genre)
+        "INSERT INTO reviews (title, review) VALUES (?, ?)",
+        (title, review)
     )
 
-    flash("Arvostelu julkaistu!")
+    review_id = db.query("SELECT last_insert_rowid()")[0][0]
+
+    for g in genres:
+        db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
+
+        genre_id = db.query(
+            "SELECT id FROM genres WHERE name = ?",
+            (g,)
+        )[0][0]
+
+        db.execute(
+            "INSERT INTO review_genres (review_id, genre_id) VALUES (?, ?)",
+            (review_id, genre_id)
+        )
+
     return redirect("/")
 
 
