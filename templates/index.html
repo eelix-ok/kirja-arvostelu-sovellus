@@ -29,12 +29,10 @@
 
 <hr>
 
-
 <form method="get" action="/">
   <input type="text" name="search" placeholder="Hae nimellä...">
   <button type="submit">Hae</button>
 </form>
-
 
 <form method="get" action="/">
   <p>Suodata genren mukaan:</p>
@@ -61,7 +59,6 @@
     <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
 
       <h3>{{ r[1] }}</h3>
-
       <p>{{ r[2] }}</p>
 
       <p>
@@ -75,9 +72,7 @@
         </a>
       </p>
 
-
       {% if session.user_id == r[3] %}
-
       <p>
         <a href="/edit/{{ r[0] }}">Muokkaa</a>
 
@@ -92,25 +87,24 @@
 
         </form>
       </p>
-
       {% endif %}
 
       <hr>
 
-
       <h4>Kommentit</h4>
 
-      {% if comments %}
+      {% set has_comments = false %}
 
-        {% for c in comments %}
-          {% if c[0] == r[0] %}
-            <p>
-              <b>{{ c[2] }}:</b> {{ c[1] }}
-            </p>
-          {% endif %}
-        {% endfor %}
+      {% for c in comments %}
+        {% if c[0] == r[0] %}
+          {% set has_comments = true %}
+          <p>
+            <b>{{ c[1] }}:</b> {{ c[2] }}
+          </p>
+        {% endif %}
+      {% endfor %}
 
-      {% else %}
+      {% if not has_comments %}
         <p>Ei kommentteja.</p>
       {% endif %}
 
