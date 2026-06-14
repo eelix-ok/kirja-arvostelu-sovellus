@@ -28,9 +28,13 @@
 
       <p>
         <a href="/edit/{{ r[0] }}">Muokkaa</a>
-      </p>
 
-    </div>
+        <form method="POST" action="/delete/{{ r[0] }}" style="display:inline;">
+            <button type="submit" onclick="return confirm('Poistetaanko arvostelu?')">
+            Poista
+            </button>
+        </form>
+     </p>
 
   {% endfor %}
 
