@@ -126,7 +126,7 @@ def logout():
 
 
 # ---------------- CREATE REVIEW ----------------
-@app.route("/create_review", methods=["POST"])
+@app.route("/new_review", methods=["POST"])
 def create_review():
     user_id = get_user_id()
 
