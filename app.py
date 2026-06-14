@@ -275,6 +275,8 @@ def delete(id):
     if not user_id:
         return "Ei oikeuksia", 403
 
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
+
     deleted = db.execute("""
         DELETE FROM reviews
         WHERE id = ? AND user_id = ?
@@ -283,10 +285,7 @@ def delete(id):
     if deleted == 0:
         return "Ei oikeuksia", 403
 
-    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
-
     return redirect("/")
-
 
 
 # ---------------- USER STATS ----------------
