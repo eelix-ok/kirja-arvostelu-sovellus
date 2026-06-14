@@ -310,3 +310,24 @@ def user_page(user_id):
         reviews=reviews,
         review_count=review_count
     )
+
+# ---------------- COMMENTS ----------------
+@app.route("/add_comment", methods=["POST"])
+def add_comment():
+    user_id = get_user_id()
+
+    if not user_id:
+        return "Ei kirjautunut", 403
+
+    review_id = request.form["review_id"]
+    content = request.form["content"].strip()
+
+    if not content:
+        return "Tyhjä kommentti", 400
+
+    db.execute("""
+        INSERT INTO comments (review_id, user_id, content)
+        VALUES (?, ?, ?)
+    """, (review_id, user_id, content))
+
+    return redirect("/")

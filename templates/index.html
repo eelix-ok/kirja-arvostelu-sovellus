@@ -75,12 +75,12 @@
         </a>
       </p>
 
+
       {% if session.user_id == r[3] %}
 
       <p>
         <a href="/edit/{{ r[0] }}">Muokkaa</a>
 
-        <!-- ✔ FIX: DELETE ON NYT POST -->
         <form method="POST"
               action="/delete/{{ r[0] }}"
               style="display:inline;">
@@ -93,6 +93,35 @@
         </form>
       </p>
 
+      {% endif %}
+
+      <hr>
+
+
+      <h4>Kommentit</h4>
+
+      {% if comments %}
+
+        {% for c in comments %}
+          {% if c[0] == r[0] %}
+            <p>
+              <b>{{ c[2] }}:</b> {{ c[1] }}
+            </p>
+          {% endif %}
+        {% endfor %}
+
+      {% else %}
+        <p>Ei kommentteja.</p>
+      {% endif %}
+
+      {% if session.username %}
+      <form method="POST" action="/add_comment">
+        <input type="hidden" name="review_id" value="{{ r[0] }}">
+        <input type="text" name="content" placeholder="Lisää kommentti">
+        <button type="submit">Lähetä</button>
+      </form>
+      {% else %}
+        <p><i>Kirjaudu sisään kommentoidaksesi</i></p>
       {% endif %}
 
     </div>
