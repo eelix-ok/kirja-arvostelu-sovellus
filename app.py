@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, redirect, render_template, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 import db
 import config
@@ -10,10 +10,8 @@ app.secret_key = config.secret_key
 
 # ---------------- HELPERS ----------------
 def get_user_id():
-
     if "user_id" in session:
         return session["user_id"]
-
 
     username = session.get("username")
     if not username:
@@ -27,79 +25,50 @@ def get_user_id():
     if not user:
         return None
 
-    user_id = user[0][0]
-    session["user_id"] = user_id
-    return user_id
+    session["user_id"] = user[0][0]
+    return user[0][0]
 
 
-# ---------------- HOME (READ + SEARCH) ----------------
+# ---------------- HOME ----------------
 @app.route("/")
 def index():
     search = request.args.get("search")
     genre = request.args.get("genre")
 
+    base_sql = """
+        SELECT reviews.id,
+               reviews.title,
+               reviews.review,
+               users.id,
+               users.username,
+               GROUP_CONCAT(genres.name, ', ') AS genres
+        FROM reviews
+        JOIN users ON reviews.user_id = users.id
+        LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+        LEFT JOIN genres ON genres.id = review_genres.genre_id
+    """
+
     if search:
-        reviews = db.query("""
-            SELECT reviews.id,
-                   reviews.title,
-                   reviews.review,
-                   users.id,
-                   users.username,
-                   GROUP_CONCAT(genres.name, ', ') AS genres
-            FROM reviews
-            JOIN users ON reviews.user_id = users.id
-            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
-            LEFT JOIN genres ON genres.id = review_genres.genre_id
-            WHERE reviews.title LIKE ?
-            GROUP BY reviews.id
-        """, ["%" + search + "%"])
+        base_sql += " WHERE reviews.title LIKE ? GROUP BY reviews.id"
+        reviews = db.query(base_sql, ["%" + search + "%"])
 
     elif genre:
-        reviews = db.query("""
-            SELECT reviews.id,
-                   reviews.title,
-                   reviews.review,
-                   users.id,
-                   users.username,
-                   GROUP_CONCAT(genres.name, ', ') AS genres
-            FROM reviews
-            JOIN users ON reviews.user_id = users.id
-            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
-            LEFT JOIN genres ON genres.id = review_genres.genre_id
-            WHERE genres.name = ?
-            GROUP BY reviews.id
-        """, [genre])
+        base_sql += " WHERE genres.name = ? GROUP BY reviews.id"
+        reviews = db.query(base_sql, [genre])
 
     else:
-        reviews = db.query("""
-            SELECT reviews.id,
-                   reviews.title,
-                   reviews.review,
-                   users.id,
-                   users.username,
-                   GROUP_CONCAT(genres.name, ', ') AS genres
-            FROM reviews
-            JOIN users ON reviews.user_id = users.id
-            LEFT JOIN review_genres ON reviews.id = review_genres.review_id
-            LEFT JOIN genres ON genres.id = review_genres.genre_id
-            GROUP BY reviews.id
-        """)
+        base_sql += " GROUP BY reviews.id"
+        reviews = db.query(base_sql)
 
     return render_template("index.html", reviews=reviews)
 
-# ---------------- NEW REVIEW PAGE ----------------
-@app.route("/new_review")
-def new_review():
-    return render_template("new_review.html")
 
-
-# ---------------- REGISTER PAGE ----------------
+# ---------------- REGISTER ----------------
 @app.route("/register")
 def register():
     return render_template("register.html")
 
 
-# ---------------- CREATE USER ----------------
 @app.route("/create_user", methods=["POST"])
 def create_user():
     username = request.form["username"]
@@ -152,25 +121,21 @@ def login():
 # ---------------- LOGOUT ----------------
 @app.route("/logout")
 def logout():
-    session.pop("username", None)
-    session.pop("user_id", None)
+    session.clear()
     return redirect("/")
 
 
 # ---------------- CREATE REVIEW ----------------
 @app.route("/create_review", methods=["POST"])
 def create_review():
-    if "user_id" not in session:
+    user_id = get_user_id()
+
+    if not user_id:
         return "Ei kirjautunut", 403
 
     title = request.form["title"].strip()
     review = request.form["review"].strip()
     genres = request.form.getlist("genres")
-
-    if not title or not review:
-        return "VIRHE: title ja review pakollisia"
-
-    user_id = session["user_id"]
 
     review_id = db.execute(
         "INSERT INTO reviews (title, review, user_id) VALUES (?, ?, ?)",
@@ -198,14 +163,10 @@ def create_review():
 def edit(id):
     user_id = get_user_id()
 
-    if not user_id:
-        return "Ei oikeuksia", 403
-
-    review = db.query("""
-        SELECT id, title, review, user_id
-        FROM reviews
-        WHERE id = ?
-    """, (id,))
+    review = db.query(
+        "SELECT id, title, review, user_id FROM reviews WHERE id = ?",
+        (id,)
+    )
 
     if not review:
         return "Ei löydy", 404
@@ -232,12 +193,9 @@ def edit(id):
 def update():
     user_id = get_user_id()
 
-    if not user_id:
-        return "Ei oikeuksia", 403
-
     review_id = request.form["id"]
-    title = request.form["title"].strip()
-    review_text = request.form["review"].strip()
+    title = request.form["title"]
+    review_text = request.form["review"]
     genres = request.form.getlist("genres")
 
     updated = db.execute("""
@@ -259,36 +217,43 @@ def update():
             (g,)
         )[0][0]
 
-        db.execute("""
-            INSERT INTO review_genres (review_id, genre_id)
-            VALUES (?, ?)
-        """, (review_id, genre_id))
+        db.execute(
+            "INSERT INTO review_genres (review_id, genre_id) VALUES (?, ?)",
+            (review_id, genre_id)
+        )
 
     return redirect("/")
 
 
-# ---------------- DELETE ----------------
-@app.route("/delete/<int:id>")
+# ---------------- DELETE (FIXED) ----------------
+@app.route("/delete/<int:id>", methods=["POST"])
 def delete(id):
     user_id = get_user_id()
 
     if not user_id:
         return "Ei oikeuksia", 403
 
-    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
+    # 🔍 DEBUG + VARMA TARKISTUS
+    review = db.query(
+        "SELECT user_id FROM reviews WHERE id = ?",
+        (id,)
+    )
 
-    deleted = db.execute("""
-        DELETE FROM reviews
-        WHERE id = ? AND user_id = ?
-    """, (id, user_id))
+    if not review:
+        return "Ei löydy", 404
 
-    if deleted == 0:
+    owner_id = review[0][0]
+
+    if owner_id != user_id:
         return "Ei oikeuksia", 403
+
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
+    db.execute("DELETE FROM reviews WHERE id = ?", (id,))
 
     return redirect("/")
 
 
-# ---------------- USER STATS ----------------
+# ---------------- USER PAGE ----------------
 @app.route("/user/<int:user_id>")
 def user_page(user_id):
 
@@ -313,9 +278,7 @@ def user_page(user_id):
         SELECT COUNT(*)
         FROM reviews
         WHERE user_id = ?
-    """, (user_id,))
-
-    review_count = review_count[0][0]
+    """, (user_id,))[0][0]
 
     return render_template(
         "user.html",
