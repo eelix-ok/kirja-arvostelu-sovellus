@@ -8,64 +8,63 @@
 
 <h1>Muokkaa arvostelua</h1>
 
-<form action="/update" method="post">
+<form method="POST" action="/update">
 
-  <!-- hidden id -->
-  <input type="hidden" name="id" value="{{ review['id'] }}">
+  <input type="hidden" name="id" value="{{ review[0] }}">
 
   <p>
     Kirjan nimi:<br>
-    <input type="text" name="title" value="{{ review['title'] }}" required>
+    <input type="text" name="title" value="{{ review[1] }}">
   </p>
 
   <p>
     Arvostelu:<br>
-    <textarea name="review" rows="8" cols="60" required>{{ review['review'] }}</textarea>
+    <textarea name="review" rows="8" cols="60">{{ review[2] }}</textarea>
   </p>
 
   <p>
-    <b>Genret:</b><br><br>
+    Genret:<br>
+
+    {% set current = genres %}
 
     <label>
       <input type="checkbox" name="genres" value="fantasy"
-        {% if "fantasy" in review["genres"] %}checked{% endif %}>
+      {% if "fantasy" in current %}checked{% endif %}>
       Fantasy
     </label><br>
 
     <label>
       <input type="checkbox" name="genres" value="scifi"
-        {% if "scifi" in review["genres"] %}checked{% endif %}>
+      {% if "scifi" in current %}checked{% endif %}>
       Sci-fi
     </label><br>
 
     <label>
       <input type="checkbox" name="genres" value="romance"
-        {% if "romance" in review["genres"] %}checked{% endif %}>
+      {% if "romance" in current %}checked{% endif %}>
       Romance
     </label><br>
 
     <label>
       <input type="checkbox" name="genres" value="horror"
-        {% if "horror" in review["genres"] %}checked{% endif %}>
+      {% if "horror" in current %}checked{% endif %}>
       Horror
     </label><br>
 
     <label>
       <input type="checkbox" name="genres" value="mystery"
-        {% if "mystery" in review["genres"] %}checked{% endif %}>
+      {% if "mystery" in current %}checked{% endif %}>
       Mystery
     </label><br>
 
   </p>
-
-  <br>
 
   <button type="submit">Tallenna muutokset</button>
 
 </form>
 
 <p>
-  <a href="/">← Takaisin</a>
+  <a href="/">Takaisin</a>
 </p>
 
 </body>

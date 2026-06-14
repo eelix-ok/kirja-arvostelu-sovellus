@@ -169,18 +169,16 @@ def create_review():
 def edit(id):
     user_id = get_user_id()
 
-    review = db.query(
-        "SELECT id, title, review, user_id FROM reviews WHERE id = ?",
-        (id,)
-    )
+    review = db.query("""
+        SELECT id, title, review
+        FROM reviews
+        WHERE id = ? AND user_id = ?
+    """, (id, user_id))
 
     if not review:
-        return "Ei löydy", 404
+        return "Ei oikeuksia tai ei löydy", 403
 
     review = review[0]
-
-    if review[3] != user_id:
-        return "Ei oikeuksia", 403
 
     genres = db.query("""
         SELECT genres.name
@@ -189,9 +187,13 @@ def edit(id):
         WHERE review_genres.review_id = ?
     """, (id,))
 
-    review = list(review) + [", ".join([g[0] for g in genres])]
+    genre_list = [g[0] for g in genres]
 
-    return render_template("edit.html", review=review)
+    return render_template(
+        "edit.html",
+        review=review,
+        genres=genre_list
+    )
 
 
 # ---------------- UPDATE ----------------
