@@ -10,6 +10,8 @@
 
 <form method="POST" action="/create_review">
 
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
   <p>
     Kirjan nimi:<br>
     <input type="text" name="title" required>

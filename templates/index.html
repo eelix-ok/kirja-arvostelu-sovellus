@@ -78,6 +78,8 @@
               action="/delete/{{ r[0] }}"
               style="display:inline;">
 
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
           <button type="submit"
                   onclick="return confirm('Poistetaanko arvostelu?')">
             Poista
@@ -91,16 +93,24 @@
 
       <h4>Kommentit</h4>
 
-      {% for c in comments if c[0] == r[0] %}
-        <p>
-          <b>{{ c[1] }}:</b> {{ c[2] }}
-        </p>
-      {% else %}
-        <p>Ei kommentteja.</p>
+      {% set found = false %}
+
+      {% for c in comments %}
+        {% if c[0] == r[0] %}
+          {% set found = true %}
+          <p>
+            <b>{{ c[1] }}:</b> {{ c[2] }}
+          </p>
+        {% endif %}
       {% endfor %}
+
+      {% if not found %}
+        <p>Ei kommentteja.</p>
+      {% endif %}
 
       {% if session.username %}
       <form method="POST" action="/add_comment">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="review_id" value="{{ r[0] }}">
         <input type="text" name="content" placeholder="Lisää kommentti">
         <button type="submit">Lähetä</button>

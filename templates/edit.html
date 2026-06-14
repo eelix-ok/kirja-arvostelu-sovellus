@@ -10,16 +10,17 @@
 
 <form method="POST" action="/update">
 
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <input type="hidden" name="id" value="{{ review[0] }}">
 
   <p>
     Kirjan nimi:<br>
-    <input type="text" name="title" value="{{ review[1] }}">
+    <input type="text" name="title" value="{{ review[1] }}" required>
   </p>
 
   <p>
     Arvostelu:<br>
-    <textarea name="review" rows="8" cols="60">{{ review[2] }}</textarea>
+    <textarea name="review" rows="8" cols="60" required>{{ review[2] }}</textarea>
   </p>
 
   <p>

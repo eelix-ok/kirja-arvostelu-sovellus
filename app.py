@@ -1,4 +1,5 @@
 import sqlite3
+import os
 from flask import Flask, redirect, render_template, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 import db
@@ -6,6 +7,18 @@ import config
 
 app = Flask(__name__)
 app.secret_key = config.secret_key
+
+
+# ---------------- CSRF ----------------
+def generate_csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = os.urandom(16).hex()
+    return session["csrf_token"]
+
+
+def check_csrf():
+    token = request.form.get("csrf_token")
+    return token and token == session.get("csrf_token")
 
 
 # ---------------- HELPERS ----------------
@@ -34,6 +47,8 @@ def get_user_id():
 def index():
     search = request.args.get("search")
     genre = request.args.get("genre")
+
+    generate_csrf_token()
 
     base_sql = """
         SELECT reviews.id,
@@ -71,18 +86,23 @@ def index():
     return render_template(
         "index.html",
         reviews=reviews,
-        comments=comments
+        comments=comments,
+        csrf_token=session.get("csrf_token")
     )
 
 
 # ---------------- REGISTER ----------------
 @app.route("/register")
 def register():
-    return render_template("register.html")
+    generate_csrf_token()
+    return render_template("register.html", csrf_token=session.get("csrf_token"))
 
 
 @app.route("/create_user", methods=["POST"])
 def create_user():
+    if not check_csrf():
+        return "CSRF error", 403
+
     username = request.form["username"]
     password1 = request.form["password1"]
     password2 = request.form["password2"]
@@ -107,7 +127,11 @@ def create_user():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
-        return render_template("login.html")
+        generate_csrf_token()
+        return render_template("login.html", csrf_token=session.get("csrf_token"))
+
+    if not check_csrf():
+        return "CSRF error", 403
 
     username = request.form["username"]
     password = request.form["password"]
@@ -140,14 +164,17 @@ def logout():
 # ---------------- NEW REVIEW PAGE ----------------
 @app.route("/new_review", methods=["GET"])
 def new_review():
-    return render_template("new_review.html")
+    generate_csrf_token()
+    return render_template("new_review.html", csrf_token=session.get("csrf_token"))
 
 
 # ---------------- CREATE REVIEW ----------------
 @app.route("/create_review", methods=["POST"])
 def create_review():
-    user_id = get_user_id()
+    if not check_csrf():
+        return "CSRF error", 403
 
+    user_id = get_user_id()
     if not user_id:
         return "Ei kirjautunut", 403
 
@@ -162,94 +189,7 @@ def create_review():
 
     for g in genres:
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
-
-        genre_id = db.query(
-            "SELECT id FROM genres WHERE name = ?",
-            (g,)
-        )[0][0]
-
-        db.execute(
-            "INSERT INTO review_genres (review_id, genre_id) VALUES (?, ?)",
-            (review_id, genre_id)
-        )
-
-    return redirect("/")
-
-
-# ---------------- EDIT ----------------
-@app.route("/edit/<int:id>")
-def edit(id):
-    user_id = get_user_id()
-
-    review = db.query("""
-        SELECT id, title, review
-        FROM reviews
-        WHERE id = ? AND user_id = ?
-    """, (id, user_id))
-
-    if not review:
-        return "Ei oikeuksia tai ei löydy", 403
-
-    review = review[0]
-
-    genres = db.query("""
-        SELECT genres.name
-        FROM genres
-        JOIN review_genres ON genres.id = review_genres.genre_id
-        WHERE review_genres.review_id = ?
-    """, (id,))
-
-    genre_list = [g[0] for g in genres]
-
-    return render_template(
-        "edit.html",
-        review=review,
-        genres=genre_list
-    )
-
-
-# ---------------- UPDATE ----------------
-@app.route("/update", methods=["POST"])
-def update():
-    user_id = get_user_id()
-
-    if not user_id:
-        return "Ei oikeuksia (ei kirjautunut)", 403
-
-    review_id = request.form["id"]
-    title = request.form["title"].strip()
-    review_text = request.form["review"].strip()
-    genres = request.form.getlist("genres")
-
-
-    owner = db.query(
-        "SELECT user_id FROM reviews WHERE id = ?",
-        (review_id,)
-    )
-
-    if not owner:
-        return "Ei löydy", 404
-
-    if owner[0][0] != user_id:
-        return "Ei oikeuksia (ei omistaja)", 403
-
-
-    db.execute("""
-        UPDATE reviews
-        SET title = ?, review = ?
-        WHERE id = ?
-    """, (title, review_text, review_id))
-
-
-    db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
-
-    for g in genres:
-        db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
-
-        genre_id = db.query(
-            "SELECT id FROM genres WHERE name = ?",
-            (g,)
-        )[0][0]
+        genre_id = db.query("SELECT id FROM genres WHERE name = ?", (g,))[0][0]
 
         db.execute("""
             INSERT INTO review_genres (review_id, genre_id)
@@ -258,11 +198,57 @@ def update():
 
     return redirect("/")
 
+
+# ---------------- UPDATE ----------------
+@app.route("/update", methods=["POST"])
+def update():
+    if not check_csrf():
+        return "CSRF error", 403
+
+    user_id = get_user_id()
+    if not user_id:
+        return "Ei oikeuksia", 403
+
+    review_id = request.form["id"]
+    title = request.form["title"].strip()
+    review_text = request.form["review"].strip()
+    genres = request.form.getlist("genres")
+
+    owner = db.query(
+        "SELECT user_id FROM reviews WHERE id = ?",
+        (review_id,)
+    )
+
+    if not owner or owner[0][0] != user_id:
+        return "Ei oikeuksia", 403
+
+    db.execute("""
+        UPDATE reviews
+        SET title = ?, review = ?
+        WHERE id = ?
+    """, (title, review_text, review_id))
+
+    db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
+
+    for g in genres:
+        db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
+        genre_id = db.query("SELECT id FROM genres WHERE name = ?", (g,))[0][0]
+
+        db.execute("""
+            INSERT INTO review_genres (review_id, genre_id)
+            VALUES (?, ?)
+        """, (review_id, genre_id))
+
+    return redirect("/")
+
+
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete(id):
-    user_id = get_user_id()
+    if not check_csrf():
+        return "CSRF error", 403
 
+    user_id = get_user_id()
     if not user_id:
         return "Ei oikeuksia", 403
 
@@ -271,10 +257,7 @@ def delete(id):
         (id,)
     )
 
-    if not review:
-        return "Ei löydy", 404
-
-    if review[0][0] != user_id:
+    if not review or review[0][0] != user_id:
         return "Ei oikeuksia", 403
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
@@ -320,14 +303,18 @@ def user_page(user_id):
         "user.html",
         user=user,
         reviews=reviews,
-        review_count=review_count
+        review_count=review_count,
+        csrf_token=session.get("csrf_token")
     )
+
 
 # ---------------- COMMENTS ----------------
 @app.route("/add_comment", methods=["POST"])
 def add_comment():
-    user_id = get_user_id()
+    if not check_csrf():
+        return "CSRF error", 403
 
+    user_id = get_user_id()
     if not user_id:
         return "Ei kirjautunut", 403
 

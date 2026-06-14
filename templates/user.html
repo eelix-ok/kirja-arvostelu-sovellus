@@ -23,18 +23,34 @@
       <p>{{ r[2] }}</p>
 
       <p>
-        <b>Genret:</b> {{ r[3] if r[3] else "Ei genrejä" }}
+        <b>Genret:</b>
+        {% if r[3] %}
+          {{ r[3] }}
+        {% else %}
+          Ei genrejä
+        {% endif %}
       </p>
 
       <p>
         <a href="/edit/{{ r[0] }}">Muokkaa</a>
 
-        <form method="POST" action="/delete/{{ r[0] }}" style="display:inline;">
-            <button type="submit" onclick="return confirm('Poistetaanko arvostelu?')">
+        <form method="POST"
+              action="/delete/{{ r[0] }}"
+              style="display:inline;">
+
+          <input type="hidden"
+                 name="csrf_token"
+                 value="{{ csrf_token }}">
+
+          <button type="submit"
+                  onclick="return confirm('Poistetaanko arvostelu?')">
             Poista
-            </button>
+          </button>
+
         </form>
-     </p>
+      </p>
+
+    </div>
 
   {% endfor %}
 
