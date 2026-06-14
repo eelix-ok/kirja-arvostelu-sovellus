@@ -40,9 +40,14 @@ def index():
 
     if search:
         reviews = db.query("""
-            SELECT reviews.id, reviews.title, reviews.review,
+            SELECT reviews.id,
+                   reviews.title,
+                   reviews.review,
+                   users.id,
+                   users.username,
                    GROUP_CONCAT(genres.name, ', ') AS genres
             FROM reviews
+            JOIN users ON reviews.user_id = users.id
             LEFT JOIN review_genres ON reviews.id = review_genres.review_id
             LEFT JOIN genres ON genres.id = review_genres.genre_id
             WHERE reviews.title LIKE ?
@@ -51,9 +56,14 @@ def index():
 
     elif genre:
         reviews = db.query("""
-            SELECT reviews.id, reviews.title, reviews.review,
+            SELECT reviews.id,
+                   reviews.title,
+                   reviews.review,
+                   users.id,
+                   users.username,
                    GROUP_CONCAT(genres.name, ', ') AS genres
             FROM reviews
+            JOIN users ON reviews.user_id = users.id
             LEFT JOIN review_genres ON reviews.id = review_genres.review_id
             LEFT JOIN genres ON genres.id = review_genres.genre_id
             WHERE genres.name = ?
@@ -62,16 +72,20 @@ def index():
 
     else:
         reviews = db.query("""
-            SELECT reviews.id, reviews.title, reviews.review,
+            SELECT reviews.id,
+                   reviews.title,
+                   reviews.review,
+                   users.id,
+                   users.username,
                    GROUP_CONCAT(genres.name, ', ') AS genres
             FROM reviews
+            JOIN users ON reviews.user_id = users.id
             LEFT JOIN review_genres ON reviews.id = review_genres.review_id
             LEFT JOIN genres ON genres.id = review_genres.genre_id
             GROUP BY reviews.id
         """)
 
     return render_template("index.html", reviews=reviews)
-
 
 # ---------------- NEW REVIEW PAGE ----------------
 @app.route("/new_review")
