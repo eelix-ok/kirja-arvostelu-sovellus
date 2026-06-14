@@ -271,10 +271,16 @@ def user_page(user_id):
     user = user[0]
 
     reviews = db.query("""
-        SELECT id, title
+        SELECT reviews.id,
+            reviews.title,
+            reviews.review,
+            GROUP_CONCAT(genres.name, ', ') AS genres
         FROM reviews
-        WHERE user_id = ?
-        ORDER BY id DESC
+        LEFT JOIN review_genres ON reviews.id = review_genres.review_id
+        LEFT JOIN genres ON genres.id = review_genres.genre_id
+        WHERE reviews.user_id = ?
+        GROUP BY reviews.id
+        ORDER BY reviews.id DESC
     """, (user_id,))
 
     review_count = db.query("""
