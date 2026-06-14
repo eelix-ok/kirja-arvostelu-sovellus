@@ -67,9 +67,7 @@
 
       <p>
         <b>Kirjoittaja:</b>
-        <a href="/user/{{ r[3] }}">
-          {{ r[4] }}
-        </a>
+        <a href="/user/{{ r[3] }}">{{ r[4] }}</a>
       </p>
 
       {% if session.user_id == r[3] %}
@@ -93,20 +91,13 @@
 
       <h4>Kommentit</h4>
 
-      {% set has_comments = false %}
-
-      {% for c in comments %}
-        {% if c[0] == r[0] %}
-          {% set has_comments = true %}
-          <p>
-            <b>{{ c[1] }}:</b> {{ c[2] }}
-          </p>
-        {% endif %}
-      {% endfor %}
-
-      {% if not has_comments %}
+      {% for c in comments if c[0] == r[0] %}
+        <p>
+          <b>{{ c[1] }}:</b> {{ c[2] }}
+        </p>
+      {% else %}
         <p>Ei kommentteja.</p>
-      {% endif %}
+      {% endfor %}
 
       {% if session.username %}
       <form method="POST" action="/add_comment">
