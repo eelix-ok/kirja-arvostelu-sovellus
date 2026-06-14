@@ -272,9 +272,9 @@ def user_page(user_id):
 
     reviews = db.query("""
         SELECT reviews.id,
-            reviews.title,
-            reviews.review,
-            GROUP_CONCAT(genres.name, ', ') AS genres
+               reviews.title,
+               reviews.review,
+               GROUP_CONCAT(genres.name, ', ') AS genres
         FROM reviews
         LEFT JOIN review_genres ON reviews.id = review_genres.review_id
         LEFT JOIN genres ON genres.id = review_genres.genre_id
