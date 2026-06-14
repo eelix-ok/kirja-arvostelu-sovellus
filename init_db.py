@@ -34,6 +34,16 @@ CREATE TABLE review_genres (
     FOREIGN KEY (review_id) REFERENCES reviews(id),
     FOREIGN KEY (genre_id) REFERENCES genres(id)
 );
+
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY,
+    review_id INTEGER,
+    user_id INTEGER,
+    content TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
 """)
 
 con.commit()
