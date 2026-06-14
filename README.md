@@ -1,46 +1,29 @@
-# Kirja-arvostelu-sovellus
+Kirja-arvostelu-sovellus on Flaskilla toteutettu web-sovellus, jossa käyttäjät voivat rekisteröityä, kirjautua sisään ja lisätä kirja-arvosteluja.
 
-## Sovelluksen kuvaus
+Käyttäjä voi:
 
-Kirja-arvostelu-sovellus on Flaskilla toteutettu web-sovellus, jossa käyttäjät voivat rekisteröityä, kirjautua sisään ja lisätä kirja-arvosteluja. Sovelluksessa käyttäjä voi kirjoittaa kirjan nimen, arvostelun sekä valita genren.
-
-Sovellus käyttää SQLite-tietokantaa käyttäjien ja arvostelujen tallentamiseen.
-
----
-
-## Ominaisuudet
-
-- Käyttäjän rekisteröityminen
-- Kirjautuminen ja uloskirjautuminen
-- Kirja-arvostelun lisääminen (otsikko, arvostelu, genre)
-- Arvostelujen lukeminen ja muokkaaminen
-- Arvostelut tallennetaan SQLite-tietokantaan
-- Viestit onnistuneista toiminnoista
-
----
-
-## Asennus ja käynnistys
-
-### 1. Kloonaa projekti ja siirry kansioon
+lisätä kirjan nimen ja arvostelun
+valita yhden tai useamman genren
+muokata ja poistaa omia arvosteluja
+kommentoida muiden käyttäjien arvosteluja
+tarkastella käyttäjäprofiileja ja tilastoja
 
 
-- git clone https://github.com/eelix-ok/kirja-arvostelu-sovellus.git
-- cd kirja-arvostelu-sovellus
+Ominaisuudet
 
-### 2. Aktivoi venv
+Käyttäjän rekisteröityminen
+Kirjautuminen ja uloskirjautuminen
+Kirja-arvostelun lisääminen (otsikko, arvostelu, genre(t))
+Arvostelujen selaaminen etusivulla
+Arvostelujen muokkaaminen ja poistaminen (vain omat)
+Käyttäjäprofiilisivu:
+käyttäjän arvostelut
+arvostelujen määrä
+Kommenttijärjestelmä:
+käyttäjät voivat kommentoida arvosteluja
+kommentit näkyvät arvostelun alla
 
-- python -m venv venv
-- source venv/Scripts/activate
-
-### 3. Asenna flask
-
-- pip install flask
-
-### 4. Tee tietokanta
-
-- python init_db.py
-
-Tietokannan rakenne:
+Tietokannan rakenne
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
@@ -52,12 +35,45 @@ CREATE TABLE reviews (
     id INTEGER PRIMARY KEY,
     title TEXT,
     review TEXT,
-    genre TEXT
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-### 5. Käynnistä sovellus
+CREATE TABLE genres (
+    id INTEGER PRIMARY KEY,
+    name TEXT UNIQUE
+);
 
-- flask run
+CREATE TABLE review_genres (
+    review_id INTEGER,
+    genre_id INTEGER,
+    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (genre_id) REFERENCES genres(id)
+);
 
-- Ja siirry saamaasi osoitteeseen
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY,
+    review_id INTEGER,
+    user_id INTEGER,
+    content TEXT,
+    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
 
+Asennus ja käynnistys
+1. Kloonaa projekti
+git clone https://github.com/eelix-ok/kirja-arvostelu-sovellus.git
+cd kirja-arvostelu-sovellus
+2. Luo virtuaaliympäristö
+python -m venv venv
+source venv/Scripts/activate   # Windows
+3. Asenna riippuvuudet
+pip install flask
+4. Alusta tietokanta
+python init_db.py
+5. Käynnistä sovellus
+flask run
+
+Avaa selaimessa:
+
+http://127.0.0.1:5000
