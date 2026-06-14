@@ -272,3 +272,41 @@ def delete(id):
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
 
     return redirect("/")
+
+
+
+# ---------------- USER STATS ----------------
+@app.route("/user/<int:user_id>")
+def user_page(user_id):
+
+    user = db.query(
+        "SELECT id, username FROM users WHERE id = ?",
+        (user_id,)
+    )
+
+    if not user:
+        return "Käyttäjää ei löytynyt", 404
+
+    user = user[0]
+
+    reviews = db.query("""
+        SELECT id, title
+        FROM reviews
+        WHERE user_id = ?
+        ORDER BY id DESC
+    """, (user_id,))
+
+    review_count = db.query("""
+        SELECT COUNT(*)
+        FROM reviews
+        WHERE user_id = ?
+    """, (user_id,))
+
+    review_count = review_count[0][0]
+
+    return render_template(
+        "user.html",
+        user=user,
+        reviews=reviews,
+        review_count=review_count
+    )

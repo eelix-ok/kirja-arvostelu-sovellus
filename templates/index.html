@@ -11,8 +11,11 @@
 {% if session.username %}
   <p>
     Kirjautunut: <b>{{ session.username }}</b>
+    |
+    <a href="/user/{{ session.user_id }}">Oma profiili</a>
+    |
+    <a href="/logout">Kirjaudu ulos</a>
   </p>
-  <p><a href="/logout">Kirjaudu ulos</a></p>
 {% else %}
   <p>
     <a href="/login">Kirjaudu sisään</a> |
@@ -26,13 +29,13 @@
 
 <hr>
 
-<!-- SEARCH -->
+
 <form method="get" action="/">
   <input type="text" name="search" placeholder="Hae nimellä...">
   <button type="submit">Hae</button>
 </form>
 
-<!-- GENRE FILTER -->
+
 <form method="get" action="/">
   <p>Suodata genren mukaan:</p>
 
@@ -62,15 +65,25 @@
       <p>{{ r[2] }}</p>
 
       <p>
-        <b>Genret:</b> {{ r[3] }}
+        <b>Genret:</b> {{ r[5] }}
       </p>
 
       <p>
+        <b>Kirjoittaja:</b>
+        <a href="/user/{{ r[3] }}">
+          {{ r[4] }}
+        </a>
+      </p>
+
+      {% if session.user_id == r[3] %}
+      <p>
         <a href="/edit/{{ r[0] }}">Muokkaa</a> |
-        <a href="/delete/{{ r[0] }}" onclick="return confirm('Poistetaanko?')">
+        <a href="/delete/{{ r[0] }}"
+           onclick="return confirm('Poistetaanko?')">
           Poista
         </a>
       </p>
+      {% endif %}
 
     </div>
   {% endfor %}
