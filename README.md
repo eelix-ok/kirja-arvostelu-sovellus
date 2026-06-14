@@ -2,26 +2,28 @@ Kirja-arvostelu-sovellus on Flaskilla toteutettu web-sovellus, jossa käyttäjä
 
 Käyttäjä voi:
 
-lisätä kirjan nimen ja arvostelun
-valita yhden tai useamman genren
-muokata ja poistaa omia arvosteluja
-kommentoida muiden käyttäjien arvosteluja
-tarkastella käyttäjäprofiileja ja tilastoja
+- Lisätä kirjan nimen ja arvostelun
+- Valita yhden tai useamman genren
+- Muokata ja poistaa omia arvosteluja
+- Kommentoida muiden käyttäjien arvosteluja
+- Tarkastella käyttäjäprofiileja ja tilastoja
 
 
 Ominaisuudet
 
-Käyttäjän rekisteröityminen
-Kirjautuminen ja uloskirjautuminen
-Kirja-arvostelun lisääminen (otsikko, arvostelu, genre(t))
-Arvostelujen selaaminen etusivulla
-Arvostelujen muokkaaminen ja poistaminen (vain omat)
+- Käyttäjän rekisteröityminen
+- Kirjautuminen ja uloskirjautuminen
+- Kirja-arvostelun lisääminen (otsikko, arvostelu, genre(t))
+- Arvostelujen selaaminen etusivulla
+- Arvostelujen muokkaaminen ja poistaminen (vain omat)
+
 Käyttäjäprofiilisivu:
-käyttäjän arvostelut
-arvostelujen määrä
+- käyttäjän arvostelut
+- arvostelujen määrä
+ 
 Kommenttijärjestelmä:
-käyttäjät voivat kommentoida arvosteluja
-kommentit näkyvät arvostelun alla
+- käyttäjät voivat kommentoida arvosteluja
+- kommentit näkyvät arvostelun alla
 
 Tietokannan rakenne
 
@@ -62,17 +64,21 @@ CREATE TABLE comments (
 
 Asennus ja käynnistys
 1. Kloonaa projekti
-git clone https://github.com/eelix-ok/kirja-arvostelu-sovellus.git
-cd kirja-arvostelu-sovellus
+- git clone https://github.com/eelix-ok/kirja-arvostelu-sovellus.git
+- cd kirja-arvostelu-sovellus
+- 
 2. Luo virtuaaliympäristö
-python -m venv venv
-source venv/Scripts/activate   # Windows
+- python -m venv venv
+- source venv/Scripts/activate
+
 3. Asenna riippuvuudet
-pip install flask
+- pip install flask
+
 4. Alusta tietokanta
-python init_db.py
+- python init_db.py
+
 5. Käynnistä sovellus
-flask run
+- flask run
 
 Avaa selaimessa:
 
