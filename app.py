@@ -35,7 +35,7 @@ def index():
     search = request.args.get("search")
     genre = request.args.get("genre")
 
-    sql = """
+    base_sql = """
         SELECT reviews.id,
                reviews.title,
                reviews.review,
@@ -49,18 +49,30 @@ def index():
     """
 
     if search:
-        sql += " WHERE reviews.title LIKE ? GROUP BY reviews.id"
-        reviews = db.query(sql, ["%" + search + "%"])
+        base_sql += " WHERE reviews.title LIKE ? GROUP BY reviews.id"
+        reviews = db.query(base_sql, ["%" + search + "%"])
 
     elif genre:
-        sql += " WHERE genres.name = ? GROUP BY reviews.id"
-        reviews = db.query(sql, [genre])
+        base_sql += " WHERE genres.name = ? GROUP BY reviews.id"
+        reviews = db.query(base_sql, [genre])
 
     else:
-        sql += " GROUP BY reviews.id"
-        reviews = db.query(sql)
+        base_sql += " GROUP BY reviews.id"
+        reviews = db.query(base_sql)
 
-    return render_template("index.html", reviews=reviews)
+    comments = db.query("""
+        SELECT comments.review_id,
+               users.username,
+               comments.content
+        FROM comments
+        JOIN users ON users.id = comments.user_id
+    """)
+
+    return render_template(
+        "index.html",
+        reviews=reviews,
+        comments=comments
+    )
 
 
 # ---------------- REGISTER ----------------
