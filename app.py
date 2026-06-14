@@ -201,19 +201,33 @@ def edit(id):
 def update():
     user_id = get_user_id()
 
+    if not user_id:
+        return "Ei oikeuksia (ei kirjautunut)", 403
+
     review_id = request.form["id"]
-    title = request.form["title"]
-    review_text = request.form["review"]
+    title = request.form["title"].strip()
+    review_text = request.form["review"].strip()
     genres = request.form.getlist("genres")
 
-    updated = db.execute("""
+
+    owner = db.query(
+        "SELECT user_id FROM reviews WHERE id = ?",
+        (review_id,)
+    )
+
+    if not owner:
+        return "Ei löydy", 404
+
+    if owner[0][0] != user_id:
+        return "Ei oikeuksia (ei omistaja)", 403
+
+
+    db.execute("""
         UPDATE reviews
         SET title = ?, review = ?
-        WHERE id = ? AND user_id = ?
-    """, (title, review_text, review_id, user_id))
+        WHERE id = ?
+    """, (title, review_text, review_id))
 
-    if updated == 0:
-        return "Ei oikeuksia", 403
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
 
@@ -225,13 +239,12 @@ def update():
             (g,)
         )[0][0]
 
-        db.execute(
-            "INSERT INTO review_genres (review_id, genre_id) VALUES (?, ?)",
-            (review_id, genre_id)
-        )
+        db.execute("""
+            INSERT INTO review_genres (review_id, genre_id)
+            VALUES (?, ?)
+        """, (review_id, genre_id))
 
     return redirect("/")
-
 
 # ---------------- DELETE ----------------
 @app.route("/delete/<int:id>", methods=["POST"])
