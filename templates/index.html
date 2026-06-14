@@ -76,13 +76,23 @@
       </p>
 
       {% if session.user_id == r[3] %}
+
       <p>
-        <a href="/edit/{{ r[0] }}">Muokkaa</a> |
-        <a href="/delete/{{ r[0] }}"
-           onclick="return confirm('Poistetaanko?')">
-          Poista
-        </a>
+        <a href="/edit/{{ r[0] }}">Muokkaa</a>
+
+        <!-- ✔ FIX: DELETE ON NYT POST -->
+        <form method="POST"
+              action="/delete/{{ r[0] }}"
+              style="display:inline;">
+
+          <button type="submit"
+                  onclick="return confirm('Poistetaanko arvostelu?')">
+            Poista
+          </button>
+
+        </form>
       </p>
+
       {% endif %}
 
     </div>
