@@ -228,7 +228,7 @@ def edit(id):
         "edit.html",
         review=review,
         genres=genre_list,
-        csrf_token=generate_csrf()  # 👈 jos käytät tokenia
+        csrf_token=generate_csrf_token()
     )
 
 # ---------------- UPDATE ----------------
