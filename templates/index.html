@@ -4,32 +4,7 @@
 
 {% block content %}
 
-<h1>Kirja-arvostelut</h1>
-
-{% for message in get_flashed_messages() %}
-  <p class="info">{{ message }}</p>
-{% endfor %}
-
-{% if session.username %}
-  <p>
-    Kirjautunut: <b>{{ session.username }}</b>
-    |
-    <a href="/user/{{ session.user_id }}">Oma profiili</a>
-    |
-    <a href="/logout">Kirjaudu ulos</a>
-  </p>
-{% else %}
-  <p>
-    <a href="/login">Kirjaudu sisään</a> |
-    <a href="/register">Luo tunnus</a>
-  </p>
-{% endif %}
-
-<p>
-  <a href="/new_review">+ Lisää uusi arvostelu</a>
-</p>
-
-<hr>
+<h2>Arvostelut</h2>
 
 <form method="get" action="/">
   <input type="text" name="search" placeholder="Hae nimellä...">
@@ -52,8 +27,6 @@
 </form>
 
 <hr>
-
-<h2>Arvostelut</h2>
 
 {% if reviews %}
 
