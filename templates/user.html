@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Käyttäjä</title>
-</head>
+{% extends "layout.html" %}
 
-<body>
+{% block title %}Käyttäjä{% endblock %}
+
+{% block content %}
 
 <h1>Käyttäjä: {{ user[1] }}</h1>
 
@@ -20,7 +18,7 @@
 
   {% for r in reviews %}
 
-    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <div class="thread">
 
       <h3>{{ r[1] }}</h3>
 
@@ -66,5 +64,4 @@
   <a href="/">Takaisin etusivulle</a>
 </p>
 
-</body>
-</html>
+{% endblock %}

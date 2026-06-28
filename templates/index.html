@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Kirja-arvostelu sovellus</title>
-</head>
+{% extends "layout.html" %}
 
-<body>
+{% block title %}Kirja-arvostelu sovellus{% endblock %}
+
+{% block content %}
 
 <h1>Kirja-arvostelut</h1>
 
@@ -60,7 +58,7 @@
 {% if reviews %}
 
   {% for r in reviews %}
-    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+    <div class="thread">
 
       <h3>{{ r[1] }}</h3>
 
@@ -131,5 +129,4 @@
   <p>Ei arvosteluja.</p>
 {% endif %}
 
-</body>
-</html>
+{% endblock %}

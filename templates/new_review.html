@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Uusi arvostelu</title>
-</head>
+{% extends "layout.html" %}
 
-<body>
+{% block title %}Uusi arvostelu{% endblock %}
+
+{% block content %}
 
 <h1>Lisää uusi kirja-arvostelu</h1>
 
@@ -17,13 +15,13 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
   <p>
-    Kirjan nimi:<br>
-    <input type="text" name="title" required>
+    <label for="title">Kirjan nimi</label><br>
+    <input type="text" id="title" name="title" required>
   </p>
 
   <p>
-    Arvostelu:<br>
-    <textarea name="review" rows="8" cols="60" required></textarea>
+    <label for="review">Arvostelu</label><br>
+    <textarea id="review" name="review" rows="8" cols="60" required></textarea>
   </p>
 
   <p>
@@ -64,5 +62,4 @@
   <a href="/">Takaisin etusivulle</a>
 </p>
 
-</body>
-</html>
+{% endblock %}

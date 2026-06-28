@@ -1,46 +1,44 @@
-<!DOCTYPE html>
-<html>
+{% extends "layout.html" %}
 
-<head>
-  <title>Kirjautuminen</title>
-</head>
+{% block title %}Kirjautuminen{% endblock %}
+
+{% block content %}
 
 {% for message in get_flashed_messages() %}
   <p class="info">{{ message }}</p>
 {% endfor %}
 
-<body>
+{% if session.username %}
+  <p>
+    Olet kirjautunut nimellä <b>{{ session.username }}</b>
+  </p>
 
-  {% if session.username %}
+  <p>
+    <a href="/logout">Kirjaudu ulos</a>
+  </p>
+
+{% else %}
+
+  <h1>Kirjautuminen</h1>
+
+  <form action="/login" method="post">
+
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
     <p>
-      Olet kirjautunut nimellä {{ session.username }}
+      <label for="username">Tunnus</label><br>
+      <input type="text" id="username" name="username" required>
     </p>
+
     <p>
-      <a href="/logout">Kirjaudu ulos</a>
+      <label for="password">Salasana</label><br>
+      <input type="password" id="password" name="password" required>
     </p>
 
-  {% else %}
+    <button type="submit">Kirjaudu</button>
 
-    <form action="/login" method="post">
+  </form>
 
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{% endif %}
 
-      <p>
-        Tunnus: <br />
-        <input type="text" name="username" required />
-      </p>
-
-      <p>
-        Salasana: <br />
-        <input type="password" name="password" required />
-      </p>
-
-      <input type="submit" value="Kirjaudu" />
-
-    </form>
-
-  {% endif %}
-
-</body>
-
-</html>
+{% endblock %}

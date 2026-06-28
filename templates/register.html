@@ -1,41 +1,36 @@
-<!DOCTYPE html>
-<html>
+{% extends "layout.html" %}
 
-<head>
-  <title>Rekisteröidy</title>
-</head>
+{% block title %}Rekisteröidy{% endblock %}
 
-<body>
+{% block content %}
 
-  <h1>Luo tunnus</h1>
+<h1>Luo tunnus</h1>
 
 {% for message in get_flashed_messages() %}
   <p class="info">{{ message }}</p>
 {% endfor %}
 
-  <form action="/create_user" method="post">
+<form action="/create_user" method="post">
 
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <p>
-      Käyttäjänimi:<br>
-      <input type="text" name="username" required>
-    </p>
+  <p>
+    <label for="username">Käyttäjänimi</label><br>
+    <input type="text" id="username" name="username" required>
+  </p>
 
-    <p>
-      Salasana:<br>
-      <input type="password" name="password1" required>
-    </p>
+  <p>
+    <label for="password1">Salasana</label><br>
+    <input type="password" id="password1" name="password1" required>
+  </p>
 
-    <p>
-      Salasana uudestaan:<br>
-      <input type="password" name="password2" required>
-    </p>
+  <p>
+    <label for="password2">Salasana uudestaan</label><br>
+    <input type="password" id="password2" name="password2" required>
+  </p>
 
-    <button type="submit">Luo tunnus</button>
+  <button type="submit">Luo tunnus</button>
 
-  </form>
+</form>
 
-</body>
-
-</html>
+{% endblock %}
