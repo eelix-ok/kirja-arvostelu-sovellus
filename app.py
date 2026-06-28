@@ -202,8 +202,7 @@ def create_review():
 # ---------------- EDIT ----------------
 @app.route("/edit/<int:id>")
 def edit(id):
-    if not check_csrf():
-        return "CSRF error", 403
+    user_id = get_user_id()
 
     review = db.query("""
         SELECT id, title, review
@@ -228,9 +227,9 @@ def edit(id):
     return render_template(
         "edit.html",
         review=review,
-        genres=genre_list
+        genres=genre_list,
+        csrf_token=generate_csrf()  # 👈 jos käytät tokenia
     )
-
 
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
