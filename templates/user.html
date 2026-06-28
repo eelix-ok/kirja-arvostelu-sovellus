@@ -8,6 +8,10 @@
 
 <h1>Käyttäjä: {{ user[1] }}</h1>
 
+{% for message in get_flashed_messages() %}
+  <p class="info">{{ message }}</p>
+{% endfor %}
+
 <p>Arvosteluja yhteensä: {{ review_count }}</p>
 
 <h2>Lisätyt arvostelut</h2>

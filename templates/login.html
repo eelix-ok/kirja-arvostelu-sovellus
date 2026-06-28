@@ -5,6 +5,10 @@
   <title>Kirjautuminen</title>
 </head>
 
+{% for message in get_flashed_messages() %}
+  <p class="info">{{ message }}</p>
+{% endfor %}
+
 <body>
 
   {% if session.username %}

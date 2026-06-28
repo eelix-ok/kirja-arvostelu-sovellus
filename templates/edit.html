@@ -8,6 +8,10 @@
 
 <h1>Muokkaa arvostelua</h1>
 
+{% for message in get_flashed_messages() %}
+  <p class="info">{{ message }}</p>
+{% endfor %}
+
 <form method="POST" action="/update">
 
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

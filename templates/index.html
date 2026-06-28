@@ -8,6 +8,10 @@
 
 <h1>Kirja-arvostelut</h1>
 
+{% for message in get_flashed_messages() %}
+  <p class="info">{{ message }}</p>
+{% endfor %}
+
 {% if session.username %}
   <p>
     Kirjautunut: <b>{{ session.username }}</b>

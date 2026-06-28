@@ -9,6 +9,10 @@
 
   <h1>Luo tunnus</h1>
 
+{% for message in get_flashed_messages() %}
+  <p class="info">{{ message }}</p>
+{% endfor %}
+
   <form action="/create_user" method="post">
 
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

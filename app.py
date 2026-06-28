@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from flask import Flask, redirect, render_template, request, session
+from flask import Flask, redirect, render_template, request, session, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 import db
 import config
@@ -19,6 +19,59 @@ def generate_csrf_token():
 def check_csrf():
     token = request.form.get("csrf_token")
     return token and token == session.get("csrf_token")
+
+
+# ---------------- VALIDATION ----------------
+ALLOWED_GENRES = {"fantasy", "scifi", "romance", "horror", "mystery"}
+
+
+def validate_review(title, review_text):
+    title = title.strip()
+    review_text = review_text.strip()
+
+    if len(title) < 2:
+        return "Otsikko on liian lyhyt (min. 2 merkkiä)."
+
+    if len(title) > 100:
+        return "Otsikko on liian pitkä (max. 100 merkkiä)."
+
+    if len(review_text) < 10:
+        return "Arvostelu on liian lyhyt (min. 10 merkkiä)."
+
+    if len(review_text) > 5000:
+        return "Arvostelu on liian pitkä (max. 5000 merkkiä)."
+
+    return None
+
+
+def validate_user(username, password1, password2):
+    username = username.strip()
+
+    if len(username) < 3:
+        return "Käyttäjänimen täytyy olla vähintään 3 merkkiä."
+
+    if len(username) > 30:
+        return "Käyttäjänimi on liian pitkä (max. 30 merkkiä)."
+
+    if password1 != password2:
+        return "Salasanat eivät täsmää."
+
+    if len(password1) < 4:
+        return "Salasanan täytyy olla vähintään 4 merkkiä."
+
+    return None
+
+
+def validate_comment(content):
+    content = content.strip()
+
+    if len(content) < 1:
+        return "Kommentti ei voi olla tyhjä."
+
+    if len(content) > 500:
+        return "Kommentti on liian pitkä (max. 500 merkkiä)."
+
+    return None
 
 
 # ---------------- HELPERS ----------------
@@ -95,31 +148,34 @@ def index():
 @app.route("/register")
 def register():
     generate_csrf_token()
-    return render_template("register.html", csrf_token=session.get("csrf_token"))
+    return render_template("register.html", csrf_token=session.get("csrf_token"), filled={})
 
 
 @app.route("/create_user", methods=["POST"])
 def create_user():
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF). Yritä uudelleen.")
+        return redirect("/register")
 
     username = request.form["username"]
     password1 = request.form["password1"]
     password2 = request.form["password2"]
 
-    if password1 != password2:
-        return "VIRHE: salasanat eivät ole samat"
-
-    password_hash = generate_password_hash(password1)
+    error = validate_user(username, password1, password2)
+    if error:
+        flash(error)
+        return render_template("register.html", csrf_token=session.get("csrf_token"), filled={"username": username})
 
     try:
         db.execute(
             "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-            (username, password_hash)
+            (username.strip(), generate_password_hash(password1))
         )
     except sqlite3.IntegrityError:
-        return "VIRHE: tunnus on jo varattu"
+        flash("Käyttäjänimi on jo varattu.")
+        return render_template("register.html", csrf_token=session.get("csrf_token"), filled={"username": username})
 
+    flash("Tunnus luotu onnistuneesti! Voit kirjautua sisään.")
     return redirect("/login")
 
 
@@ -128,40 +184,49 @@ def create_user():
 def login():
     if request.method == "GET":
         generate_csrf_token()
-        return render_template("login.html", csrf_token=session.get("csrf_token"))
+        return render_template("login.html", csrf_token=session.get("csrf_token"), filled={})
 
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF).")
+        return redirect("/login")
 
     username = request.form["username"]
     password = request.form["password"]
 
+    if not username:
+        flash("Käyttäjänimi ei voi olla tyhjä.")
+        return render_template("login.html", csrf_token=session.get("csrf_token"), filled={})
+
     result = db.query(
         "SELECT id, password_hash FROM users WHERE username = ?",
-        (username,)
+        (username.strip(),)
     )
 
     if not result:
-        return "VIRHE: käyttäjää ei löydy"
+        flash("Käyttäjää ei löytynyt.")
+        return render_template("login.html", csrf_token=session.get("csrf_token"), filled={"username": username})
 
     user_id, password_hash = result[0]
 
-    if check_password_hash(password_hash, password):
-        session["username"] = username
-        session["user_id"] = user_id
-        return redirect("/")
-    else:
-        return "VIRHE: väärä salasana"
+    if not check_password_hash(password_hash, password):
+        flash("Väärä salasana.")
+        return render_template("login.html", csrf_token=session.get("csrf_token"), filled={"username": username})
+
+    session["username"] = username
+    session["user_id"] = user_id
+    flash("Kirjautuminen onnistui!")
+    return redirect("/")
 
 
 # ---------------- LOGOUT ----------------
 @app.route("/logout")
 def logout():
     session.clear()
+    flash("Kirjauduit ulos.")
     return redirect("/")
 
 
-# ---------------- NEW REVIEW PAGE ----------------
+# ---------------- NEW REVIEW ----------------
 @app.route("/new_review", methods=["GET"])
 def new_review():
     generate_csrf_token()
@@ -172,22 +237,33 @@ def new_review():
 @app.route("/create_review", methods=["POST"])
 def create_review():
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF).")
+        return redirect("/")
 
     user_id = get_user_id()
     if not user_id:
-        return "Ei kirjautunut", 403
+        flash("Sinun täytyy olla kirjautunut.")
+        return redirect("/login")
 
-    title = request.form["title"].strip()
-    review_text = request.form["review"].strip()
+    title = request.form["title"]
+    review_text = request.form["review"]
     genres = request.form.getlist("genres")
+
+    error = validate_review(title, review_text)
+    if error:
+        flash(error)
+        return redirect("/new_review")
 
     review_id = db.execute(
         "INSERT INTO reviews (title, review, user_id) VALUES (?, ?, ?)",
-        (title, review_text, user_id)
+        (title.strip(), review_text.strip(), user_id)
     )
 
     for g in genres:
+        if g not in ALLOWED_GENRES:
+            flash("Virheellinen genre valittu.")
+            return redirect("/new_review")
+
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
         genre_id = db.query("SELECT id FROM genres WHERE name = ?", (g,))[0][0]
 
@@ -196,6 +272,7 @@ def create_review():
             VALUES (?, ?)
         """, (review_id, genre_id))
 
+    flash("Arvostelu lisätty onnistuneesti!")
     return redirect("/")
 
 
@@ -211,7 +288,8 @@ def edit(id):
     """, (id, user_id))
 
     if not review:
-        return "Ei oikeuksia tai ei löydy", 403
+        flash("Et voi muokata tätä arvostelua.")
+        return redirect("/")
 
     review = review[0]
 
@@ -231,20 +309,28 @@ def edit(id):
         csrf_token=generate_csrf_token()
     )
 
+
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF).")
+        return redirect("/")
 
     user_id = get_user_id()
     if not user_id:
-        return "Ei oikeuksia", 403
+        flash("Et ole kirjautunut.")
+        return redirect("/login")
 
     review_id = request.form["id"]
-    title = request.form["title"].strip()
-    review_text = request.form["review"].strip()
+    title = request.form["title"]
+    review_text = request.form["review"]
     genres = request.form.getlist("genres")
+
+    error = validate_review(title, review_text)
+    if error:
+        flash(error)
+        return redirect(f"/edit/{review_id}")
 
     owner = db.query(
         "SELECT user_id FROM reviews WHERE id = ?",
@@ -252,17 +338,22 @@ def update():
     )
 
     if not owner or owner[0][0] != user_id:
-        return "Ei oikeuksia", 403
+        flash("Ei oikeuksia muokata tätä.")
+        return redirect("/")
 
     db.execute("""
         UPDATE reviews
         SET title = ?, review = ?
         WHERE id = ?
-    """, (title, review_text, review_id))
+    """, (title.strip(), review_text.strip(), review_id))
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (review_id,))
 
     for g in genres:
+        if g not in ALLOWED_GENRES:
+            flash("Virheellinen genre.")
+            return redirect(f"/edit/{review_id}")
+
         db.execute("INSERT OR IGNORE INTO genres (name) VALUES (?)", (g,))
         genre_id = db.query("SELECT id FROM genres WHERE name = ?", (g,))[0][0]
 
@@ -271,6 +362,7 @@ def update():
             VALUES (?, ?)
         """, (review_id, genre_id))
 
+    flash("Muutokset tallennettu!")
     return redirect("/")
 
 
@@ -278,11 +370,13 @@ def update():
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete(id):
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF).")
+        return redirect("/")
 
     user_id = get_user_id()
     if not user_id:
-        return "Ei oikeuksia", 403
+        flash("Ei oikeuksia.")
+        return redirect("/")
 
     review = db.query(
         "SELECT user_id FROM reviews WHERE id = ?",
@@ -290,11 +384,13 @@ def delete(id):
     )
 
     if not review or review[0][0] != user_id:
-        return "Ei oikeuksia", 403
+        flash("Ei oikeuksia poistaa tätä.")
+        return redirect("/")
 
     db.execute("DELETE FROM review_genres WHERE review_id = ?", (id,))
     db.execute("DELETE FROM reviews WHERE id = ?", (id,))
 
+    flash("Arvostelu poistettu.")
     return redirect("/")
 
 
@@ -308,7 +404,8 @@ def user_page(user_id):
     )
 
     if not user:
-        return "Käyttäjää ei löytynyt", 404
+        flash("Käyttäjää ei löytynyt.")
+        return redirect("/")
 
     user = user[0]
 
@@ -344,21 +441,26 @@ def user_page(user_id):
 @app.route("/add_comment", methods=["POST"])
 def add_comment():
     if not check_csrf():
-        return "CSRF error", 403
+        flash("Turvallisuusvirhe (CSRF).")
+        return redirect("/")
 
     user_id = get_user_id()
     if not user_id:
-        return "Ei kirjautunut", 403
+        flash("Sinun täytyy olla kirjautunut.")
+        return redirect("/login")
 
     review_id = request.form["review_id"]
-    content = request.form["content"].strip()
+    content = request.form["content"]
 
-    if not content:
-        return "Tyhjä kommentti", 400
+    error = validate_comment(content)
+    if error:
+        flash(error)
+        return redirect("/")
 
     db.execute("""
         INSERT INTO comments (review_id, user_id, content)
         VALUES (?, ?, ?)
-    """, (review_id, user_id, content))
+    """, (review_id, user_id, content.strip()))
 
+    flash("Kommentti lisätty.")
     return redirect("/")
