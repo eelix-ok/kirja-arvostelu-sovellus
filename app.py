@@ -199,6 +199,39 @@ def create_review():
     return redirect("/")
 
 
+# ---------------- EDIT ----------------
+@app.route("/edit/<int:id>")
+def edit(id):
+    if not check_csrf():
+        return "CSRF error", 403
+
+    review = db.query("""
+        SELECT id, title, review
+        FROM reviews
+        WHERE id = ? AND user_id = ?
+    """, (id, user_id))
+
+    if not review:
+        return "Ei oikeuksia tai ei löydy", 403
+
+    review = review[0]
+
+    genres = db.query("""
+        SELECT genres.name
+        FROM genres
+        JOIN review_genres ON genres.id = review_genres.genre_id
+        WHERE review_genres.review_id = ?
+    """, (id,))
+
+    genre_list = [g[0] for g in genres]
+
+    return render_template(
+        "edit.html",
+        review=review,
+        genres=genre_list
+    )
+
+
 # ---------------- UPDATE ----------------
 @app.route("/update", methods=["POST"])
 def update():
